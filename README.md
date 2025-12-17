@@ -1,2 +1,2 @@
-# ews-accounting
+# EWS-accounting
 EWS Company
