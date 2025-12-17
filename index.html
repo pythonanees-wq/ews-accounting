@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="East & West Services - Trading Company Accounting System">
+
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EWS Accounting">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <title>EWS Accounting - Trading Company</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; }
+
+        /* Install Banner */
+        .install-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(135deg, #4a90a4 0%, #357a8c 100%); color: white; padding: 15px 20px; z-index: 9999; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
+        .install-banner.show { display: flex; justify-content: space-between; align-items: center; }
+        .install-banner p { font-size: 14px; }
+        .install-banner button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-left: 10px; }
+        .install-banner .install-btn { background: white; color: #357a8c; }
+        .install-banner .close-banner { background: transparent; color: white; border: 1px solid white; }
+
+        /* Offline indicator */
+        .offline-indicator { display: none; position: fixed; top: 0; left: 0; right: 0; background: #ff9800; color: white; text-align: center; padding: 8px; font-size: 13px; z-index: 9999; }
+        .offline-indicator.show { display: block; }
+
+        /* Login Screen */
+        .login-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+        .login-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 90%; max-width: 400px; }
+        .login-box h1 { text-align: center; color: #1a1a2e; margin-bottom: 10px; font-size: 24px; }
+        .login-box .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+        .login-box .logo { text-align: center; font-size: 48px; color: #4a90a4; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.3s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #4a90a4; }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #4a90a4 0%, #357a8c 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(74,144,164,0.4); }
+        .btn:active { transform: translateY(0); }
+        .btn-secondary { background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); }
+        .btn-danger { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
+        .btn-success { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .error-msg { color: #dc3545; font-size: 13px; margin-top: 5px; display: none; }
+
+        /* Main App */
+        .app-container { display: none; }
+
+        /* Mobile Bottom Nav */
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a2e; padding: 10px 0; padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; }
+        .bottom-nav ul { display: flex; justify-content: space-around; list-style: none; }
+        .bottom-nav a { display: flex; flex-direction: column; align-items: center; color: #8892a0; text-decoration: none; font-size: 10px; padding: 5px 10px; }
+        .bottom-nav a.active { color: #4a90a4; }
+        .bottom-nav a i { font-size: 20px; margin-bottom: 3px; }
+
+        /* Desktop Sidebar */
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 20px 0; z-index: 100; }
+        .sidebar-header { padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 18px; margin-bottom: 5px; }
+        .sidebar-header p { font-size: 12px; color: #8892a0; }
+        .nav-menu { list-style: none; }
+        .nav-menu li { margin-bottom: 5px; }
+        .nav-menu a { display: flex; align-items: center; padding: 12px 25px; color: #b8c1cc; text-decoration: none; transition: all 0.3s; border-left: 3px solid transparent; }
+        .nav-menu a:hover, .nav-menu a.active { background: rgba(255,255,255,0.1); color: white; border-left-color: #4a90a4; }
+        .nav-menu a i { width: 24px; margin-right: 12px; font-size: 16px; }
+        .nav-menu .logout { margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+
+        .main-content { margin-left: 260px; padding: 30px; padding-bottom: 100px; min-height: 100vh; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        .page-header h1 { font-size: 24px; color: #1a1a2e; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-info .avatar { width: 45px; height: 45px; background: linear-gradient(135deg, #4a90a4 0%, #357a8c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; }
+
+        /* Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .stat-card .icon { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+        .stat-card .icon.blue { background: #e3f2fd; color: #1976d2; }
+        .stat-card .icon.green { background: #e8f5e9; color: #388e3c; }
+        .stat-card .icon.orange { background: #fff3e0; color: #f57c00; }
+        .stat-card .icon.purple { background: #f3e5f5; color: #7b1fa2; }
+        .stat-card h3 { font-size: 22px; color: #1a1a2e; margin-bottom: 5px; }
+        .stat-card p { color: #666; font-size: 13px; }
+
+        /* Tables */
+        .data-card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 20px; }
+        .data-card-header { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .data-card-header h2 { font-size: 16px; color: #1a1a2e; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+        .data-table th { background: #f8f9fa; font-weight: 600; color: #333; font-size: 11px; text-transform: uppercase; }
+        .data-table tr:hover { background: #f8f9fa; }
+        .data-table .actions { display: flex; gap: 5px; flex-wrap: wrap; }
+        .data-table .actions button { padding: 6px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 11px; }
+        .data-table .actions .edit-btn { background: #e3f2fd; color: #1976d2; }
+        .data-table .actions .delete-btn { background: #ffebee; color: #c62828; }
+        .data-table .actions .view-btn { background: #e8f5e9; color: #388e3c; }
+
+        /* Responsive table wrapper */
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+        .badge-success { background: #e8f5e9; color: #388e3c; }
+        .badge-warning { background: #fff3e0; color: #f57c00; }
+        .badge-danger { background: #ffebee; color: #c62828; }
+        .badge-info { background: #e3f2fd; color: #1976d2; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: flex-start; padding: 20px; overflow-y: auto; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 16px; width: 100%; max-width: 600px; margin: auto; }
+        .modal-header { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; border-radius: 16px 16px 0 0; }
+        .modal-header h2 { font-size: 18px; color: #1a1a2e; }
+        .modal-header .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #666; padding: 0 10px; }
+        .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+        .modal-footer .btn { width: auto; padding: 10px 20px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+
+        /* Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Items Table in Form */
+        .items-table { width: 100%; margin: 15px 0; border-collapse: collapse; font-size: 13px; }
+        .items-table th, .items-table td { padding: 8px; border: 1px solid #ddd; }
+        .items-table input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .add-item-btn { background: #e8f5e9; color: #388e3c; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-size: 13px; }
+
+        /* Search */
+        .search-box { display: flex; gap: 10px; flex-wrap: wrap; }
+        .search-box input { padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 8px; min-width: 200px; flex: 1; }
+        .search-box .btn { width: auto; padding: 10px 15px; }
+
+        /* Quick Actions FAB */
+        .fab { position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; background: linear-gradient(135deg, #4a90a4 0%, #357a8c 100%); color: white; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(74,144,164,0.4); z-index: 99; display: none; }
+        .fab:active { transform: scale(0.95); }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .bottom-nav { display: block; }
+            .main-content { margin-left: 0; padding: 15px; padding-bottom: 100px; }
+            .fab { display: block; }
+            .form-row, .form-row.three-col { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 20px; }
+            .stat-card h3 { font-size: 18px; }
+            .modal-content { max-width: 100%; margin: 10px; }
+            .modal { padding: 10px; }
+            .data-table th, .data-table td { padding: 10px 8px; font-size: 12px; }
+            .user-info span { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .stat-card { padding: 15px; }
+            .stat-card h3 { font-size: 16px; }
+            .stat-card p { font-size: 11px; }
+        }
+
+        /* PWA Safe Areas */
+        @supports (padding: max(0px)) {
+            .main-content { padding-bottom: max(100px, calc(80px + env(safe-area-inset-bottom))); }
+            .login-container { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Offline Indicator -->
+    <div class="offline-indicator" id="offlineIndicator">
+        <i class="fas fa-wifi-slash"></i> You're offline. Changes will sync when connected.
+    </div>
+
+    <!-- Install Banner -->
+    <div class="install-banner" id="installBanner">
+        <p><i class="fas fa-download"></i> Install EWS Accounting for quick access</p>
+        <div>
+            <button class="close-banner" onclick="dismissInstall()">Later</button>
+            <button class="install-btn" onclick="installApp()">Install</button>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-box">
+            <div class="logo"><i class="fas fa-building"></i></div>
+            <h1>East & West Services</h1>
+            <p class="subtitle">Trading Company Accounting System</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password" required autocomplete="current-password">
+                </div>
+                <p class="error-msg" id="loginError">Invalid username or password</p>
+                <button type="submit" class="btn">Sign In</button>
+            </form>
+            <p style="text-align: center; margin-top: 20px; color: #666; font-size: 13px;">
+                Default: admin / admin123
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="app-container" id="appContainer">
+        <!-- Desktop Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>EWS Accounting</h2>
+                <p id="currentUserDisplay">Admin User</p>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#" class="active" data-section="dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
+                <li><a href="#" data-section="customers"><i class="fas fa-users"></i><span>Customers</span></a></li>
+                <li><a href="#" data-section="transactions"><i class="fas fa-exchange-alt"></i><span>Transactions</span></a></li>
+                <li><a href="#" data-section="bills"><i class="fas fa-file-invoice"></i><span>Bills / Invoices</span></a></li>
+                <li><a href="#" data-section="delivery"><i class="fas fa-truck"></i><span>Delivery Orders</span></a></li>
+                <li><a href="#" data-section="receipts"><i class="fas fa-receipt"></i><span>Receipts</span></a></li>
+                <li><a href="#" data-section="ledger"><i class="fas fa-book"></i><span>Customer Ledger</span></a></li>
+                <li><a href="#" data-section="users" id="usersMenuLink"><i class="fas fa-user-cog"></i><span>User Management</span></a></li>
+                <li><a href="#" data-section="backup"><i class="fas fa-database"></i><span>Backup / Restore</span></a></li>
+                <li class="logout"><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            </ul>
+        </nav>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="bottom-nav">
+            <ul>
+                <li><a href="#" class="active" data-section="dashboard"><i class="fas fa-home"></i>Home</a></li>
+                <li><a href="#" data-section="customers"><i class="fas fa-users"></i>Customers</a></li>
+                <li><a href="#" data-section="bills"><i class="fas fa-file-invoice"></i>Bills</a></li>
+                <li><a href="#" data-section="receipts"><i class="fas fa-receipt"></i>Receipts</a></li>
+                <li><a href="#" data-section="more"><i class="fas fa-ellipsis-h"></i>More</a></li>
+            </ul>
+        </nav>
+
+        <!-- FAB for quick add -->
+        <button class="fab" id="fabBtn" onclick="showQuickActions()">
+            <i class="fas fa-plus"></i>
+        </button>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section class="section active" id="dashboardSection">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                    <div class="user-info">
+                        <span id="dateDisplay"></span>
+                        <div class="avatar" id="userAvatar">A</div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon blue"><i class="fas fa-users"></i></div>
+                        <h3 id="totalCustomers">0</h3>
+                        <p>Total Customers</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon green"><i class="fas fa-file-invoice"></i></div>
+                        <h3 id="totalBills">0</h3>
+                        <p>Total Bills</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon orange"><i class="fas fa-rupee-sign"></i></div>
+                        <h3 id="totalReceivable">0</h3>
+                        <p>Receivable</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon purple"><i class="fas fa-check-circle"></i></div>
+                        <h3 id="totalReceived">0</h3>
+                        <p>Received</p>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2>Recent Transactions</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTransactions">
+                                <tr><td colspan="4" style="text-align: center; color: #666;">No transactions yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Customers Section -->
+            <section class="section" id="customersSection">
+                <div class="page-header">
+                    <h1>Customers</h1>
+                    <button class="btn" style="width: auto; padding: 10px 20px;" onclick="openModal('customerModal')">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2>Customer List</h2>
+                        <div class="search-box">
+                            <input type="text" id="customerSearch" placeholder="Search..." onkeyup="filterCustomers()">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Contact</th>
+                                    <th>Balance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bills Section -->
+            <section class="section" id="billsSection">
+                <div class="page-header">
+                    <h1>Bills / Invoices</h1>
+                    <button class="btn" style="width: auto; padding: 10px 20px;" onclick="openModal('billModal')">
+                        <i class="fas fa-plus"></i> Create
+                    </button>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2>All Bills</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Bill No.</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Net Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="billsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Delivery Orders Section -->
+            <section class="section" id="deliverySection">
+                <div class="page-header">
+                    <h1>Delivery Orders</h1>
+                    <button class="btn" style="width: auto; padding: 10px 20px;" onclick="openModal('deliveryModal')">
+                        <i class="fas fa-plus"></i> Create
+                    </button>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2>All Delivery Orders</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>D.O. No.</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deliveryTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Receipts Section -->
+            <section class="section" id="receiptsSection">
+                <div class="page-header">
+                    <h1>Payment Receipts</h1>
+                    <button class="btn" style="width: auto; padding: 10px 20px;" onclick="openModal('receiptModal')">
+                        <i class="fas fa-plus"></i> Record
+                    </button>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2>All Receipts</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Receipt No.</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="receiptsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions Section -->
+            <section class="section" id="transactionsSection">
+                <div class="page-header">
+                    <h1>All Transactions</h1>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2>Transaction History</h2>
+                        <select id="transactionFilter" onchange="filterTransactions()" style="padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                            <option value="all">All Types</option>
+                            <option value="bill">Bills</option>
+                            <option value="payment">Payments</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Customer</th>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ledger Section -->
+            <section class="section" id="ledgerSection">
+                <div class="page-header">
+                    <h1>Customer Ledger</h1>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2>Generate Ledger</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div class="form-group">
+                            <label>Select Customer</label>
+                            <select id="ledgerCustomer" required>
+                                <option value="">-- Select Customer --</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>From Date</label>
+                                <input type="date" id="ledgerFromDate">
+                            </div>
+                            <div class="form-group">
+                                <label>To Date</label>
+                                <input type="date" id="ledgerToDate">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                            <button class="btn" style="width: auto; flex: 1; min-width: 120px;" onclick="generateLedgerView()">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-success" style="width: auto; flex: 1; min-width: 120px;" onclick="exportLedgerExcel()">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="data-card" id="ledgerViewCard" style="display: none;">
+                    <div class="data-card-header">
+                        <h2 id="ledgerTitle">Customer Ledger</h2>
+                    </div>
+                    <div style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #eee; font-size: 13px;">
+                        <strong>Period:</strong> <span id="ledgerPeriod"></span><br>
+                        <strong>Opening:</strong> ₨<span id="ledgerOpening">0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
+                                    <th>Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledgerTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Management Section -->
+            <section class="section" id="usersSection">
+                <div class="page-header">
+                    <h1>User Management</h1>
+                    <button class="btn" style="width: auto; padding: 10px 20px;" onclick="openModal('userModal')">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2>System Users</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- More Section (Mobile) -->
+            <section class="section" id="moreSection">
+                <div class="page-header">
+                    <h1>More Options</h1>
+                </div>
+                <div class="data-card">
+                    <div style="padding: 10px;">
+                        <a href="#" data-section="delivery" onclick="showSection('delivery')" style="display: flex; align-items: center; padding: 15px; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                            <i class="fas fa-truck" style="width: 30px; color: #4a90a4;"></i> Delivery Orders
+                        </a>
+                        <a href="#" data-section="transactions" onclick="showSection('transactions')" style="display: flex; align-items: center; padding: 15px; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                            <i class="fas fa-exchange-alt" style="width: 30px; color: #4a90a4;"></i> All Transactions
+                        </a>
+                        <a href="#" data-section="ledger" onclick="showSection('ledger')" style="display: flex; align-items: center; padding: 15px; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                            <i class="fas fa-book" style="width: 30px; color: #4a90a4;"></i> Customer Ledger
+                        </a>
+                        <a href="#" data-section="users" onclick="showSection('users')" style="display: flex; align-items: center; padding: 15px; text-decoration: none; color: #333; border-bottom: 1px solid #eee;" id="moreUsersLink">
+                            <i class="fas fa-user-cog" style="width: 30px; color: #4a90a4;"></i> User Management
+                        </a>
+                        <a href="#" data-section="backup" onclick="showSection('backup')" style="display: flex; align-items: center; padding: 15px; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                            <i class="fas fa-database" style="width: 30px; color: #4a90a4;"></i> Backup / Restore
+                        </a>
+                        <a href="#" onclick="handleLogout(event)" style="display: flex; align-items: center; padding: 15px; text-decoration: none; color: #dc3545;">
+                            <i class="fas fa-sign-out-alt" style="width: 30px;"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Backup Section -->
+            <section class="section" id="backupSection">
+                <div class="page-header">
+                    <h1>Backup & Restore</h1>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2><i class="fas fa-download"></i> Export Data</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">Download all data as JSON file. Save to Google Drive for backup.</p>
+                        <button class="btn btn-success" onclick="exportData()">
+                            <i class="fas fa-download"></i> Download Backup
+                        </button>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h2><i class="fas fa-upload"></i> Import Data</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">Restore from a backup file.</p>
+                        <input type="file" id="importFile" accept=".json" style="margin-bottom: 15px; width: 100%;">
+                        <button class="btn" onclick="importData()">
+                            <i class="fas fa-upload"></i> Restore Backup
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Customer Modal -->
+    <div class="modal" id="customerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Customer</h2>
+                <button class="close-btn" onclick="closeModal('customerModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm">
+                    <div class="form-group">
+                        <label>Company Name *</label>
+                        <input type="text" id="customerCompany" required placeholder="e.g., ZRK Group Ltd.">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Contact Person</label>
+                            <input type="text" id="customerContact" placeholder="e.g., Mr. Khan">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="customerPhone" placeholder="0300-1234567">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="customerLocation" placeholder="e.g., Peshawar">
+                    </div>
+                    <div class="form-group">
+                        <label>Opening Balance</label>
+                        <input type="number" id="customerBalance" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('customerModal')">Cancel</button>
+                <button class="btn" onclick="saveCustomer()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bill Modal -->
+    <div class="modal" id="billModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Create Bill</h2>
+                <button class="close-btn" onclick="closeModal('billModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="billForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Customer *</label>
+                            <select id="billCustomer" required>
+                                <option value="">-- Select --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date *</label>
+                            <input type="date" id="billDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Items</label>
+                        <div class="table-responsive">
+                            <table class="items-table" id="billItemsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th style="width: 60px;">Qty</th>
+                                        <th style="width: 80px;">Rate</th>
+                                        <th style="width: 80px;">Total</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="billItemsBody">
+                                    <tr>
+                                        <td><input type="text" class="item-name" placeholder="Item"></td>
+                                        <td><input type="number" class="item-qty" value="1" min="1" onchange="calculateBillTotal()"></td>
+                                        <td><input type="number" class="item-rate" value="0" onchange="calculateBillTotal()"></td>
+                                        <td class="item-total">0</td>
+                                        <td><button type="button" class="delete-btn" onclick="removeItemRow(this)">&times;</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="add-item-btn" onclick="addBillItemRow()"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label>Total</label>
+                            <input type="number" id="billTotalAmount" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Discount</label>
+                            <input type="number" id="billDiscount" value="0" onchange="calculateBillNet()">
+                        </div>
+                        <div class="form-group">
+                            <label>Net Amount</label>
+                            <input type="number" id="billNetAmount" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Terms</label>
+                        <input type="text" id="billTerms" value="Delivery Item by Sea: Within 2 months / P.O. date. 30% Advance Payments.">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('billModal')">Cancel</button>
+                <button class="btn" onclick="saveBill()">Save & PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Order Modal -->
+    <div class="modal" id="deliveryModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Create Delivery Order</h2>
+                <button class="close-btn" onclick="closeModal('deliveryModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="deliveryForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Customer *</label>
+                            <select id="deliveryCustomer" required>
+                                <option value="">-- Select --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date *</label>
+                            <input type="date" id="deliveryDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Delivery Date</label>
+                        <input type="date" id="deliveryDueDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Items</label>
+                        <div class="table-responsive">
+                            <table class="items-table" id="deliveryItemsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th style="width: 60px;">Qty</th>
+                                        <th style="width: 80px;">Rate</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deliveryItemsBody">
+                                    <tr>
+                                        <td><input type="text" class="item-name" placeholder="Item"></td>
+                                        <td><input type="number" class="item-qty" value="1" min="1"></td>
+                                        <td><input type="number" class="item-rate" value="0"></td>
+                                        <td><button type="button" class="delete-btn" onclick="removeItemRow(this)">&times;</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="add-item-btn" onclick="addDeliveryItemRow()"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Terms</label>
+                        <input type="text" id="deliveryTerms" value="Delivery Item by Sea: Within 2 months / P.O. date. 30% Advance Payments.">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('deliveryModal')">Cancel</button>
+                <button class="btn" onclick="saveDeliveryOrder()">Save & PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal" id="receiptModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Record Payment</h2>
+                <button class="close-btn" onclick="closeModal('receiptModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="receiptForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Customer *</label>
+                            <select id="receiptCustomer" required onchange="loadCustomerBills()">
+                                <option value="">-- Select --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date *</label>
+                            <input type="date" id="receiptDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Against Bill</label>
+                        <select id="receiptBill">
+                            <option value="">-- Optional --</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Bill Amount</label>
+                            <input type="number" id="receiptBillAmount" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount Received *</label>
+                            <input type="number" id="receiptAmount" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <select id="receiptMethod">
+                            <option value="Online Bank Transfer">Bank Transfer</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Cheque">Cheque</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('receiptModal')">Cancel</button>
+                <button class="btn" onclick="saveReceipt()">Save & PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add User</h2>
+                <button class="close-btn" onclick="closeModal('userModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Username *</label>
+                            <input type="text" id="newUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="newFullName" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Password *</label>
+                            <input type="password" id="newPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Role *</label>
+                            <select id="newRole" required>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('userModal')">Cancel</button>
+                <button class="btn" onclick="saveUser()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Modal -->
+    <div class="modal" id="quickActionsModal">
+        <div class="modal-content" style="max-width: 300px;">
+            <div class="modal-header">
+                <h2>Quick Actions</h2>
+                <button class="close-btn" onclick="closeModal('quickActionsModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 10px;">
+                <button class="btn" style="margin-bottom: 10px;" onclick="closeModal('quickActionsModal'); openModal('customerModal')">
+                    <i class="fas fa-user-plus"></i> Add Customer
+                </button>
+                <button class="btn" style="margin-bottom: 10px;" onclick="closeModal('quickActionsModal'); openModal('billModal')">
+                    <i class="fas fa-file-invoice"></i> Create Bill
+                </button>
+                <button class="btn" style="margin-bottom: 10px;" onclick="closeModal('quickActionsModal'); openModal('deliveryModal')">
+                    <i class="fas fa-truck"></i> Delivery Order
+                </button>
+                <button class="btn btn-success" onclick="closeModal('quickActionsModal'); openModal('receiptModal')">
+                    <i class="fas fa-money-bill"></i> Record Payment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ PWA FUNCTIONALITY ============
+        let deferredPrompt;
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW registered'))
+                    .catch(err => console.log('SW registration failed'));
+            });
+        }
+
+        // Install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').classList.add('show');
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choice) => {
+                    deferredPrompt = null;
+                    document.getElementById('installBanner').classList.remove('show');
+                });
+            }
+        }
+
+        function dismissInstall() {
+            document.getElementById('installBanner').classList.remove('show');
+        }
+
+        // Offline detection
+        window.addEventListener('online', () => {
+            document.getElementById('offlineIndicator').classList.remove('show');
+        });
+
+        window.addEventListener('offline', () => {
+            document.getElementById('offlineIndicator').classList.add('show');
+        });
+
+        // ============ DATA STORE ============
+        let appData = {
+            users: [{ id: 1, username: 'admin', password: 'admin123', fullName: 'Administrator', role: 'admin', created: '2024-01-01' }],
+            customers: [],
+            bills: [],
+            deliveryOrders: [],
+            receipts: [],
+            transactions: [],
+            settings: { companyName: 'East & West Services', refPrefix: 'EWS', currentYear: new Date().getFullYear().toString().slice(-2) },
+            counters: { bill: 182, delivery: 183, receipt: 159 }
+        };
+
+        let currentUser = null;
+        const DB_KEY = 'ewsAccountingData';
+
+        // ============ INITIALIZATION ============
+        function init() {
+            loadData();
+            document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            document.getElementById('billDate').valueAsDate = new Date();
+            document.getElementById('deliveryDate').valueAsDate = new Date();
+            document.getElementById('receiptDate').valueAsDate = new Date();
+
+            // Desktop Navigation
+            document.querySelectorAll('.sidebar .nav-menu a[data-section]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSection(link.dataset.section);
+                });
+            });
+
+            // Mobile Navigation
+            document.querySelectorAll('.bottom-nav a[data-section]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSection(link.dataset.section);
+                });
+            });
+
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+            // Check offline status
+            if (!navigator.onLine) {
+                document.getElementById('offlineIndicator').classList.add('show');
+            }
+        }
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem(DB_KEY);
+                if (saved) appData = JSON.parse(saved);
+            } catch (e) { console.log('Using default data'); }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(DB_KEY, JSON.stringify(appData));
+            } catch (e) { console.log('Could not save'); }
+        }
+
+        // ============ AUTHENTICATION ============
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const user = appData.users.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                document.getElementById('currentUserDisplay').textContent = user.fullName;
+                document.getElementById('userAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+                if (user.role !== 'admin') {
+                    document.getElementById('usersMenuLink').style.display = 'none';
+                    document.getElementById('moreUsersLink').style.display = 'none';
+                }
+                refreshAllTables();
+                updateDashboard();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        function handleLogout(e) {
+            e.preventDefault();
+            currentUser = null;
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        // ============ NAVIGATION ============
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId + 'Section').classList.add('active');
+
+            // Update nav active states
+            document.querySelectorAll('.nav-menu a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll(`[data-section="${sectionId}"]`).forEach(l => l.classList.add('active'));
+
+            if (sectionId === 'ledger') populateCustomerDropdown('ledgerCustomer');
+        }
+
+        function showQuickActions() {
+            openModal('quickActionsModal');
+        }
+
+        // ============ MODALS ============
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            if (['billModal', 'deliveryModal', 'receiptModal'].includes(modalId)) {
+                populateCustomerDropdown(modalId.replace('Modal', 'Customer'));
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function populateCustomerDropdown(selectId) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">-- Select --</option>';
+            appData.customers.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.company}</option>`;
+            });
+        }
+
+        // ============ CUSTOMERS ============
+        function saveCustomer() {
+            const customer = {
+                id: Date.now(),
+                company: document.getElementById('customerCompany').value,
+                contact: document.getElementById('customerContact').value,
+                phone: document.getElementById('customerPhone').value,
+                location: document.getElementById('customerLocation').value,
+                balance: parseFloat(document.getElementById('customerBalance').value) || 0,
+                created: new Date().toISOString().split('T')[0]
+            };
+            appData.customers.push(customer);
+            saveData();
+            closeModal('customerModal');
+            document.getElementById('customerForm').reset();
+            refreshCustomersTable();
+            updateDashboard();
+        }
+
+        function refreshCustomersTable() {
+            const tbody = document.getElementById('customersTableBody');
+            if (appData.customers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">No customers yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = appData.customers.map(c => `
+                <tr>
+                    <td><strong>${c.company}</strong><br><small style="color: #666;">${c.location || ''}</small></td>
+                    <td>${c.contact || '-'}<br><small style="color: #666;">${c.phone || ''}</small></td>
+                    <td><strong>₨${formatNumber(c.balance)}</strong></td>
+                    <td class="actions">
+                        <button class="view-btn" onclick="viewCustomerLedger(${c.id})"><i class="fas fa-book"></i></button>
+                        <button class="delete-btn" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteCustomer(id) {
+            if (confirm('Delete this customer?')) {
+                appData.customers = appData.customers.filter(c => c.id !== id);
+                saveData();
+                refreshCustomersTable();
+                updateDashboard();
+            }
+        }
+
+        function viewCustomerLedger(customerId) {
+            document.getElementById('ledgerCustomer').value = customerId;
+            showSection('ledger');
+            generateLedgerView();
+        }
+
+        function filterCustomers() {
+            const search = document.getElementById('customerSearch').value.toLowerCase();
+            document.querySelectorAll('#customersTableBody tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(search) ? '' : 'none';
+            });
+        }
+
+        // ============ BILLS ============
+        function addBillItemRow() {
+            const tbody = document.getElementById('billItemsBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="item-name" placeholder="Item"></td>
+                <td><input type="number" class="item-qty" value="1" min="1" onchange="calculateBillTotal()"></td>
+                <td><input type="number" class="item-rate" value="0" onchange="calculateBillTotal()"></td>
+                <td class="item-total">0</td>
+                <td><button type="button" class="delete-btn" onclick="removeItemRow(this)">&times;</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function removeItemRow(btn) {
+            btn.closest('tr').remove();
+            calculateBillTotal();
+        }
+
+        function calculateBillTotal() {
+            let total = 0;
+            document.querySelectorAll('#billItemsBody tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+                const itemTotal = qty * rate;
+                row.querySelector('.item-total').textContent = formatNumber(itemTotal);
+                total += itemTotal;
+            });
+            document.getElementById('billTotalAmount').value = total;
+            calculateBillNet();
+        }
+
+        function calculateBillNet() {
+            const total = parseFloat(document.getElementById('billTotalAmount').value) || 0;
+            const discount = parseFloat(document.getElementById('billDiscount').value) || 0;
+            document.getElementById('billNetAmount').value = total - discount;
+        }
+
+        function saveBill() {
+            const customerId = document.getElementById('billCustomer').value;
+            if (!customerId) { alert('Select a customer'); return; }
+
+            const customer = appData.customers.find(c => c.id == customerId);
+            appData.counters.bill++;
+            const billNo = `${appData.settings.refPrefix}-${appData.settings.currentYear}/${appData.counters.bill}`;
+
+            const items = [];
+            document.querySelectorAll('#billItemsBody tr').forEach(row => {
+                const name = row.querySelector('.item-name').value;
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+                if (name && qty > 0) items.push({ name, qty, rate, total: qty * rate });
+            });
+
+            const bill = {
+                id: Date.now(),
+                billNo,
+                customerId: parseInt(customerId),
+                customerName: customer.company,
+                date: document.getElementById('billDate').value,
+                items,
+                totalAmount: parseFloat(document.getElementById('billTotalAmount').value) || 0,
+                discount: parseFloat(document.getElementById('billDiscount').value) || 0,
+                netAmount: parseFloat(document.getElementById('billNetAmount').value) || 0,
+                terms: document.getElementById('billTerms').value
+            };
+
+            appData.bills.push(bill);
+            customer.balance += bill.netAmount;
+            appData.transactions.push({
+                id: Date.now(), date: bill.date, type: 'bill', refNo: billNo,
+                customerId: customer.id, customerName: customer.company,
+                debit: bill.netAmount, credit: 0, description: `Bill No. ${billNo}`
+            });
+
+            saveData();
+            closeModal('billModal');
+            resetBillForm();
+            refreshBillsTable();
+            updateDashboard();
+            generateBillPDF(bill, customer);
+        }
+
+        function resetBillForm() {
+            document.getElementById('billForm').reset();
+            document.getElementById('billItemsBody').innerHTML = `
+                <tr>
+                    <td><input type="text" class="item-name" placeholder="Item"></td>
+                    <td><input type="number" class="item-qty" value="1" min="1" onchange="calculateBillTotal()"></td>
+                    <td><input type="number" class="item-rate" value="0" onchange="calculateBillTotal()"></td>
+                    <td class="item-total">0</td>
+                    <td><button type="button" class="delete-btn" onclick="removeItemRow(this)">&times;</button></td>
+                </tr>`;
+            document.getElementById('billDate').valueAsDate = new Date();
+            document.getElementById('billTerms').value = "Delivery Item by Sea: Within 2 months / P.O. date. 30% Advance Payments.";
+        }
+
+        function refreshBillsTable() {
+            const tbody = document.getElementById('billsTableBody');
+            if (appData.bills.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">No bills yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = appData.bills.map(b => `
+                <tr>
+                    <td><strong>${b.billNo}</strong></td>
+                    <td>${formatDate(b.date)}</td>
+                    <td>${b.customerName}</td>
+                    <td><strong>₨${formatNumber(b.netAmount)}</strong></td>
+                    <td class="actions">
+                        <button class="view-btn" onclick="regenerateBillPDF(${b.id})"><i class="fas fa-file-pdf"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function regenerateBillPDF(billId) {
+            const bill = appData.bills.find(b => b.id === billId);
+            const customer = appData.customers.find(c => c.id === bill.customerId);
+            generateBillPDF(bill, customer);
+        }
+
+        // ============ DELIVERY ORDERS ============
+        function addDeliveryItemRow() {
+            const tbody = document.getElementById('deliveryItemsBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="item-name" placeholder="Item"></td>
+                <td><input type="number" class="item-qty" value="1" min="1"></td>
+                <td><input type="number" class="item-rate" value="0"></td>
+                <td><button type="button" class="delete-btn" onclick="removeItemRow(this)">&times;</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function saveDeliveryOrder() {
+            const customerId = document.getElementById('deliveryCustomer').value;
+            if (!customerId) { alert('Select a customer'); return; }
+
+            const customer = appData.customers.find(c => c.id == customerId);
+            appData.counters.delivery++;
+            const doNo = `${appData.settings.refPrefix}/${appData.settings.currentYear}/${appData.counters.delivery}`;
+
+            const items = [];
+            document.querySelectorAll('#deliveryItemsBody tr').forEach(row => {
+                const name = row.querySelector('.item-name').value;
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+                if (name && qty > 0) items.push({ name, qty, rate });
+            });
+
+            const delivery = {
+                id: Date.now(), doNo, customerId: parseInt(customerId),
+                customerName: customer.company, customerContact: customer.contact,
+                date: document.getElementById('deliveryDate').value,
+                deliveryDate: document.getElementById('deliveryDueDate').value,
+                items, terms: document.getElementById('deliveryTerms').value
+            };
+
+            appData.deliveryOrders.push(delivery);
+            appData.transactions.push({
+                id: Date.now(), date: delivery.date, type: 'delivery', refNo: doNo,
+                customerId: customer.id, customerName: customer.company,
+                debit: 0, credit: 0, description: `Delivery Order ${doNo}`
+            });
+
+            saveData();
+            closeModal('deliveryModal');
+            resetDeliveryForm();
+            refreshDeliveryTable();
+            updateDashboard();
+            generateDeliveryPDF(delivery, customer);
+        }
+
+        function resetDeliveryForm() {
+            document.getElementById('deliveryForm').reset();
+            document.getElementById('deliveryItemsBody').innerHTML = `
+                <tr>
+                    <td><input type="text" class="item-name" placeholder="Item"></td>
+                    <td><input type="number" class="item-qty" value="1" min="1"></td>
+                    <td><input type="number" class="item-rate" value="0"></td>
+                    <td><button type="button" class="delete-btn" onclick="removeItemRow(this)">&times;</button></td>
+                </tr>`;
+            document.getElementById('deliveryDate').valueAsDate = new Date();
+            document.getElementById('deliveryTerms').value = "Delivery Item by Sea: Within 2 months / P.O. date. 30% Advance Payments.";
+        }
+
+        function refreshDeliveryTable() {
+            const tbody = document.getElementById('deliveryTableBody');
+            if (appData.deliveryOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">No orders yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = appData.deliveryOrders.map(d => `
+                <tr>
+                    <td><strong>${d.doNo}</strong></td>
+                    <td>${formatDate(d.date)}</td>
+                    <td>${d.customerName}</td>
+                    <td>${d.items.length} items</td>
+                    <td class="actions">
+                        <button class="view-btn" onclick="regenerateDeliveryPDF(${d.id})"><i class="fas fa-file-pdf"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function regenerateDeliveryPDF(doId) {
+            const delivery = appData.deliveryOrders.find(d => d.id === doId);
+            const customer = appData.customers.find(c => c.id === delivery.customerId);
+            generateDeliveryPDF(delivery, customer);
+        }
+
+        // ============ RECEIPTS ============
+        function loadCustomerBills() {
+            const customerId = document.getElementById('receiptCustomer').value;
+            const billSelect = document.getElementById('receiptBill');
+            billSelect.innerHTML = '<option value="">-- Optional --</option>';
+            if (customerId) {
+                appData.bills.filter(b => b.customerId == customerId).forEach(b => {
+                    billSelect.innerHTML += `<option value="${b.id}" data-amount="${b.netAmount}">${b.billNo} - ₨${formatNumber(b.netAmount)}</option>`;
+                });
+            }
+            billSelect.onchange = function() {
+                const selected = billSelect.options[billSelect.selectedIndex];
+                document.getElementById('receiptBillAmount').value = selected.dataset.amount || '';
+            };
+        }
+
+        function saveReceipt() {
+            const customerId = document.getElementById('receiptCustomer').value;
+            if (!customerId) { alert('Select a customer'); return; }
+
+            const amount = parseFloat(document.getElementById('receiptAmount').value);
+            if (!amount || amount <= 0) { alert('Enter valid amount'); return; }
+
+            const customer = appData.customers.find(c => c.id == customerId);
+            appData.counters.receipt++;
+            const receiptNo = `${appData.settings.refPrefix}-${appData.settings.currentYear}/${appData.counters.receipt}`;
+
+            const billId = document.getElementById('receiptBill').value;
+            const bill = billId ? appData.bills.find(b => b.id == billId) : null;
+
+            const receipt = {
+                id: Date.now(), receiptNo, customerId: parseInt(customerId),
+                customerName: customer.company, customerLocation: customer.location,
+                date: document.getElementById('receiptDate').value,
+                billId: billId ? parseInt(billId) : null,
+                billNo: bill ? bill.billNo : null,
+                billAmount: bill ? bill.netAmount : null,
+                amountReceived: amount,
+                pendingAmount: bill ? (bill.netAmount - amount) : null,
+                method: document.getElementById('receiptMethod').value
+            };
+
+            appData.receipts.push(receipt);
+            customer.balance -= amount;
+            appData.transactions.push({
+                id: Date.now(), date: receipt.date, type: 'payment', refNo: receiptNo,
+                customerId: customer.id, customerName: customer.company,
+                debit: 0, credit: amount, description: `Payment (${receipt.method})`
+            });
+
+            saveData();
+            closeModal('receiptModal');
+            document.getElementById('receiptForm').reset();
+            document.getElementById('receiptDate').valueAsDate = new Date();
+            refreshReceiptsTable();
+            refreshCustomersTable();
+            updateDashboard();
+            generateAcknowledgementPDF(receipt, customer, bill);
+        }
+
+        function refreshReceiptsTable() {
+            const tbody = document.getElementById('receiptsTableBody');
+            if (appData.receipts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">No receipts yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = appData.receipts.map(r => `
+                <tr>
+                    <td><strong>${r.receiptNo}</strong></td>
+                    <td>${formatDate(r.date)}</td>
+                    <td>${r.customerName}</td>
+                    <td><strong>₨${formatNumber(r.amountReceived)}</strong></td>
+                    <td class="actions">
+                        <button class="view-btn" onclick="regenerateReceiptPDF(${r.id})"><i class="fas fa-file-pdf"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function regenerateReceiptPDF(receiptId) {
+            const receipt = appData.receipts.find(r => r.id === receiptId);
+            const customer = appData.customers.find(c => c.id === receipt.customerId);
+            const bill = receipt.billId ? appData.bills.find(b => b.id === receipt.billId) : null;
+            generateAcknowledgementPDF(receipt, customer, bill);
+        }
+
+        // ============ TRANSACTIONS ============
+        function refreshTransactionsTable() {
+            const tbody = document.getElementById('transactionsTableBody');
+            if (appData.transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">No transactions</td></tr>';
+                return;
+            }
+            const sorted = [...appData.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            tbody.innerHTML = sorted.map(t => `
+                <tr>
+                    <td>${formatDate(t.date)}</td>
+                    <td><span class="badge badge-${t.type === 'bill' ? 'info' : t.type === 'payment' ? 'success' : 'warning'}">${t.type}</span></td>
+                    <td>${t.customerName}</td>
+                    <td>${t.debit ? '₨' + formatNumber(t.debit) : '-'}</td>
+                    <td>${t.credit ? '₨' + formatNumber(t.credit) : '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function filterTransactions() {
+            const filter = document.getElementById('transactionFilter').value;
+            document.querySelectorAll('#transactionsTableBody tr').forEach(row => {
+                if (filter === 'all') { row.style.display = ''; return; }
+                const type = row.querySelector('.badge')?.textContent || '';
+                row.style.display = type === filter ? '' : 'none';
+            });
+        }
+
+        // ============ LEDGER ============
+        function generateLedgerView() {
+            const customerId = document.getElementById('ledgerCustomer').value;
+            if (!customerId) { alert('Select a customer'); return; }
+
+            const customer = appData.customers.find(c => c.id == customerId);
+            const fromDate = document.getElementById('ledgerFromDate').value;
+            const toDate = document.getElementById('ledgerToDate').value;
+
+            let transactions = appData.transactions.filter(t => t.customerId == customerId);
+            if (fromDate) transactions = transactions.filter(t => t.date >= fromDate);
+            if (toDate) transactions = transactions.filter(t => t.date <= toDate);
+            transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            document.getElementById('ledgerViewCard').style.display = 'block';
+            document.getElementById('ledgerTitle').textContent = customer.company;
+            document.getElementById('ledgerPeriod').textContent = fromDate && toDate ? `${formatDate(fromDate)} to ${formatDate(toDate)}` : 'All Time';
+            document.getElementById('ledgerOpening').textContent = '0';
+
+            const tbody = document.getElementById('ledgerTableBody');
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666;">No transactions</td></tr>';
+                return;
+            }
+
+            let balance = 0;
+            tbody.innerHTML = transactions.map((t, i) => {
+                balance += (t.debit || 0) - (t.credit || 0);
+                return `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${formatDate(t.date)}</td>
+                        <td>${t.description}</td>
+                        <td>${t.debit ? formatNumber(t.debit) : ''}</td>
+                        <td>${t.credit ? formatNumber(t.credit) : ''}</td>
+                        <td><strong>${formatNumber(balance)}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportLedgerExcel() {
+            const customerId = document.getElementById('ledgerCustomer').value;
+            if (!customerId) { alert('Select a customer'); return; }
+
+            const customer = appData.customers.find(c => c.id == customerId);
+            const fromDate = document.getElementById('ledgerFromDate').value;
+            const toDate = document.getElementById('ledgerToDate').value;
+
+            let transactions = appData.transactions.filter(t => t.customerId == customerId);
+            if (fromDate) transactions = transactions.filter(t => t.date >= fromDate);
+            if (toDate) transactions = transactions.filter(t => t.date <= toDate);
+            transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const wb = XLSX.utils.book_new();
+            const data = [
+                [customer.company], [],
+                ['Time Period:', fromDate && toDate ? `${fromDate} to ${toDate}` : 'All Time'],
+                ['Opening Balance:', 0], [],
+                ['NO.', 'DATE', 'DESCRIPTION', 'Debit', 'Credit', 'Balance']
+            ];
+
+            let balance = 0;
+            transactions.forEach((t, i) => {
+                balance += (t.debit || 0) - (t.credit || 0);
+                data.push([i + 1, t.date, t.description, t.debit || '', t.credit || '', balance]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, 'Ledger');
+            XLSX.writeFile(wb, `${customer.company.replace(/[^a-zA-Z0-9]/g, '_')}-Ledger.xlsx`);
+        }
+
+        // ============ USER MANAGEMENT ============
+        function saveUser() {
+            if (currentUser.role !== 'admin') { alert('Admin only'); return; }
+
+            const username = document.getElementById('newUsername').value;
+            if (appData.users.find(u => u.username === username)) { alert('Username exists'); return; }
+
+            appData.users.push({
+                id: Date.now(),
+                username,
+                password: document.getElementById('newPassword').value,
+                fullName: document.getElementById('newFullName').value,
+                role: document.getElementById('newRole').value,
+                created: new Date().toISOString().split('T')[0]
+            });
+
+            saveData();
+            closeModal('userModal');
+            document.getElementById('userForm').reset();
+            refreshUsersTable();
+        }
+
+        function refreshUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = appData.users.map(u => `
+                <tr>
+                    <td>${u.username}</td>
+                    <td>${u.fullName}</td>
+                    <td><span class="badge badge-${u.role === 'admin' ? 'danger' : 'info'}">${u.role}</span></td>
+                    <td class="actions">
+                        ${u.username !== 'admin' ? `<button class="delete-btn" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteUser(userId) {
+            if (currentUser.role !== 'admin') { alert('Admin only'); return; }
+            if (confirm('Delete user?')) {
+                appData.users = appData.users.filter(u => u.id !== userId);
+                saveData();
+                refreshUsersTable();
+            }
+        }
+
+        // ============ BACKUP & RESTORE ============
+        function exportData() {
+            const dataStr = JSON.stringify(appData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `EWS_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) { alert('Select a file'); return; }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.users && imported.customers) {
+                        appData = imported;
+                        saveData();
+                        alert('Data restored!');
+                        refreshAllTables();
+                        updateDashboard();
+                    } else { alert('Invalid file'); }
+                } catch (err) { alert('Error reading file'); }
+            };
+            reader.readAsText(file);
+        }
+
+        // ============ DASHBOARD ============
+        function updateDashboard() {
+            document.getElementById('totalCustomers').textContent = appData.customers.length;
+            document.getElementById('totalBills').textContent = appData.bills.length;
+
+            const totalReceivable = appData.customers.reduce((sum, c) => sum + Math.max(0, c.balance), 0);
+            const totalReceived = appData.receipts.reduce((sum, r) => sum + r.amountReceived, 0);
+
+            document.getElementById('totalReceivable').textContent = '₨' + formatNumber(totalReceivable);
+            document.getElementById('totalReceived').textContent = '₨' + formatNumber(totalReceived);
+
+            const recent = [...appData.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+            const tbody = document.getElementById('recentTransactions');
+
+            if (recent.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">No transactions yet</td></tr>';
+            } else {
+                tbody.innerHTML = recent.map(t => `
+                    <tr>
+                        <td>${formatDate(t.date)}</td>
+                        <td>${t.customerName}</td>
+                        <td><span class="badge badge-${t.type === 'bill' ? 'info' : t.type === 'payment' ? 'success' : 'warning'}">${t.type}</span></td>
+                        <td>₨${formatNumber(t.debit || t.credit)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function refreshAllTables() {
+            refreshCustomersTable();
+            refreshBillsTable();
+            refreshDeliveryTable();
+            refreshReceiptsTable();
+            refreshTransactionsTable();
+            refreshUsersTable();
+            populateCustomerDropdown('ledgerCustomer');
+        }
+
+        // ============ PDF GENERATION ============
+        function generateBillPDF(bill, customer) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFillColor(51, 51, 51);
+            doc.rect(15, 15, 180, 15, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bolditalic');
+            doc.text('Bill / Invoice', 105, 25, { align: 'center' });
+
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Dated: ${formatDate(bill.date)}`, 15, 42);
+            doc.text(`Ref: ${bill.billNo}`, 195, 42, { align: 'right' });
+
+            doc.text('M/S:', 15, 52);
+            doc.setFont('helvetica', 'normal');
+            const customerText = customer.contact ? `${customer.company} (${customer.contact})` : customer.company;
+            doc.text(customerText, 28, 52);
+            doc.line(28, 53, 28 + doc.getTextWidth(customerText), 53);
+
+            doc.autoTable({
+                startY: 60,
+                head: [['SR. NO.', 'Item Name', 'QTY', 'RATE @', 'TOTAL AMOUNT']],
+                body: bill.items.map((item, i) => [i + 1, item.name, item.qty, `${formatNumber(item.rate)}/-`, `=${formatNumber(item.total)}/-`]),
+                theme: 'grid',
+                headStyles: { fillColor: [51, 51, 51], textColor: [255, 255, 255], fontStyle: 'bold' },
+                columnStyles: { 0: { cellWidth: 20, halign: 'center' }, 1: { cellWidth: 70 }, 2: { cellWidth: 25, halign: 'center' }, 3: { cellWidth: 35, halign: 'center' }, 4: { cellWidth: 35, halign: 'right' } }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 5;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Total Amount ========>', 15, finalY + 10);
+            doc.text(`=${formatNumber(bill.netAmount)}/-`, 195, finalY + 10, { align: 'right' });
+            doc.line(15, finalY + 20, 195, finalY + 20);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            bill.terms.split('. ').forEach((term, i) => {
+                if (term.trim()) doc.text('• ' + term.trim() + '.', 20, finalY + 30 + (i * 7));
+            });
+
+            doc.setFontSize(11);
+            doc.line(140, finalY + 60, 195, finalY + 60);
+            doc.text('Manager Finance.', 195, finalY + 68, { align: 'right' });
+
+            doc.save(`Bill_${bill.billNo.replace(/\\//g, '_')}.pdf`);
+        }
+
+        function generateDeliveryPDF(delivery, customer) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFillColor(51, 51, 51);
+            doc.rect(15, 15, 180, 15, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bolditalic');
+            doc.text('Delivery Order', 105, 25, { align: 'center' });
+
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bolditalic');
+            doc.text(`Date: ${formatDate(delivery.date)}`, 15, 42);
+            doc.text(`Ref: ${delivery.doNo}`, 195, 42, { align: 'right' });
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('M/S:', 15, 52);
+            doc.setFont('helvetica', 'normal');
+            const customerText = customer.contact ? `${customer.company}, ${customer.location || ''} (${customer.contact})` : `${customer.company}, ${customer.location || ''}`;
+            doc.text(customerText, 28, 52);
+            doc.line(28, 53, 28 + doc.getTextWidth(customerText), 53);
+
+            doc.autoTable({
+                startY: 60,
+                head: [['SR. NO.', 'Item Name', 'QTY', 'RATE @']],
+                body: delivery.items.map((item, i) => [i + 1, item.name, item.qty, formatNumber(item.rate)]),
+                theme: 'grid',
+                headStyles: { fillColor: [51, 51, 51], textColor: [255, 255, 255], fontStyle: 'bold' },
+                columnStyles: { 0: { cellWidth: 25, halign: 'center' }, 1: { cellWidth: 90 }, 2: { cellWidth: 30, halign: 'center' }, 3: { cellWidth: 40, halign: 'center' } }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 10;
+            doc.line(15, finalY, 195, finalY);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            delivery.terms.split('. ').forEach((term, i) => {
+                if (term.trim()) doc.text('• ' + term.trim() + '.', 20, finalY + 15 + (i * 7));
+            });
+
+            doc.setFontSize(11);
+            doc.line(140, finalY + 45, 195, finalY + 45);
+            doc.text('Manager Finance.', 195, finalY + 53, { align: 'right' });
+
+            doc.save(`Delivery_Order_${delivery.doNo.replace(/\\//g, '_')}.pdf`);
+        }
+
+        function generateAcknowledgementPDF(receipt, customer, bill) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'italic');
+            doc.text(`Dated: ${formatDate(receipt.date)}`, 195, 20, { align: 'right' });
+            doc.text(`Ref. No.: ${receipt.receiptNo}`, 195, 27, { align: 'right' });
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`M/S ${customer.company},`, 15, 45);
+            doc.text(customer.location || '', 15, 52);
+
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Subject:', 15, 67);
+            doc.setFont('helvetica', 'bold');
+            const subject = 'LETTER OF THANKS / ACKNOWLEDGEMENT (RECEIPT OF ' + (receipt.pendingAmount > 0 ? 'PARTIAL ' : '') + 'PAYMENT)';
+            doc.text(subject, 35, 67);
+            doc.line(35, 68, 35 + doc.getTextWidth(subject), 68);
+
+            doc.setFont('helvetica', 'normal');
+            const intro = 'Thank you for your purchase. This payment receipt acknowledges & clarifies that the following business transactions were made with your esteemed company.';
+            doc.text(doc.splitTextToSize(intro, 175), 20, 80);
+
+            doc.autoTable({
+                startY: 95,
+                head: [['Sr. No.', 'Bill. No.', 'Total Bill', 'Payment Received', 'Pending Amount']],
+                body: [[1, bill ? `${bill.billNo} dated: ${formatDate(bill.date)}` : 'General Payment', bill ? `=${formatNumber(bill.netAmount)}/-` : '-', `=${formatNumber(receipt.amountReceived)}/-`, receipt.pendingAmount !== null ? `=${formatNumber(receipt.pendingAmount)}/-` : '-']],
+                theme: 'grid',
+                headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.5, lineColor: [0, 0, 0] },
+                styles: { lineWidth: 0.5, lineColor: [0, 0, 0] },
+                foot: [['', 'Total outstanding Payment', '', '', receipt.pendingAmount !== null ? `=${formatNumber(receipt.pendingAmount)}/-` : '-']],
+                footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 10;
+            const amountInWords = numberToWords(receipt.amountReceived);
+            const thankYou = `We gratefully acknowledge the receipt of your ${receipt.pendingAmount > 0 ? 'partial ' : ''}payment amounting to Rupees ${amountInWords} only${bill ? `, against our Bill No. ${bill.billNo.split('/').pop()}` : ''}.`;
+            doc.text(doc.splitTextToSize(thankYou, 175), 20, finalY);
+
+            finalY += 20;
+            doc.text('Your continued support is highly appreciated.', 20, finalY);
+            finalY += 15;
+            doc.text('With thanks and regards,', 15, finalY);
+
+            doc.line(140, finalY + 20, 195, finalY + 20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Manager Finance', 195, finalY + 28, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+            doc.text(appData.settings.companyName, 195, finalY + 35, { align: 'right' });
+
+            doc.save(`Acknowledgement_${receipt.receiptNo.replace(/\\//g, '_')}.pdf`);
+        }
+
+        // ============ UTILITIES ============
+        function formatNumber(num) { return Math.round(num).toLocaleString('en-IN'); }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\\//g, '-');
+        }
+
+        function numberToWords(num) {
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            if (num === 0) return 'Zero';
+            function convert(n) {
+                if (n < 20) return ones[n];
+                if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+                if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + convert(n % 100) : '');
+                if (n < 100000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + convert(n % 1000) : '');
+                if (n < 10000000) return convert(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 ? ' ' + convert(n % 100000) : '');
+                return convert(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 ? ' ' + convert(n % 10000000) : '');
+            }
+            return convert(Math.round(num));
+        }
+
+        init();
+    </script>
+</body>
+</html>
